@@ -1,0 +1,6 @@
+[servers]
+13.201.95.28 ansible_user=ubuntu
+65.2.183.144 ansible_user=ubuntu
+
+[load_balancer]
+15.206.169.162 ansible_user=ubuntu

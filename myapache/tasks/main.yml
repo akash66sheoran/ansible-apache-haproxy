@@ -1,0 +1,35 @@
+---
+# tasks file for myapache
+- name: install apache2
+  ansible.builtin.apt:
+    name: apache2
+    state: present
+    update_cache: yes
+
+- name: start apache service
+  ansible.builtin.systemd:
+    name: apache2
+    enabled: yes
+    state: started
+  register: apache_start_result
+
+- name: handle apache start failure
+  block:
+    - debug:
+        msg: "Failed to start Apache service. Checking logs for details."
+    - ansible.builtin.command: journalctl -u apache2
+      register: apache_logs
+    - fail:
+        msg: "Apache service failed to start due to: {{ apache_logs.stdout }}"
+  when: apache_start_result is failed
+
+- name: allow access to port 80
+  community.general.ufw:
+    rule: allow
+    port: 80
+    proto: tcp
+
+- name: copy website files
+  ansible.builtin.copy:
+    src: /home/akash/my-website/
+    dest: /var/www/html/

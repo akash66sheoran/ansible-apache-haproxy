@@ -1,0 +1,35 @@
+---
+# tasks file for myloadbalancer
+- name: install HAProxy
+  ansible.builtin.apt:
+    name: haproxy
+    state: present
+    update_cache: yes
+
+- name: configure haproxy.cfg file
+  template:
+    src: "templates/haproxy.cfg.j2"
+    dest: "/etc/haproxy/haproxy.cfg"
+
+- name: allow access to port 80
+  community.general.ufw:
+    rule: allow
+    port: 80
+    proto: tcp
+
+- name: restart haproxy service
+  service:
+    name: haproxy
+    state: restarted
+    enabled: yes
+  register: haproxy_restart_result
+
+- name: handle restart haproxy failure
+  block:
+    - debug:
+        msg: "Failed to restart haproxy service. Checking logs for details."
+    - ansible.builtin.command: journalctl -u haproxy
+      register: haproxy_logs
+    - fail:
+        msg: "haproxy service failed to restart due to: {{ haproxy_logs.stdout }}"
+  when: haproxy_restart_result is failed
